@@ -1,0 +1,5 @@
+- git remote add origin <github url> : Connects to remote repo
+- git push --set-upstream origin <branch name> : links your local branch to the remote branch (origin)
+  - Setting upstream allows Git to remember that your local master branch corresponds to origin/master.
+  - This simplifies future push/pull operations.
+- git pull origin <branch name> : Pulls changes from remote branch

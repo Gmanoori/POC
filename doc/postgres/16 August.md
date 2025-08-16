@@ -1,0 +1,6 @@
+- **`"3D000"`** is a specific SQLState code that means **"invalid_catalog_name"**, or in simpler terms, **"database does not exist"**.
+- \l : lists databases, views
+- \dt : lists tables
+- \du : lists users
+- \h : help in cmd line
+- Can use basic SQL to show, create, update, delete and drop objects

@@ -1,65 +1,74 @@
-import org.apache.spark.sql.{SparkSession}
+import org.apache.spark.sql.SparkSession
+import java.sql.DriverManager
+
+object Ingest{
+
+  def createDb(jdbcUrl: String, username: String, password: String, dbName:String) {
+    import java.sql.DriverManager
+
+    val connection = DriverManager.getConnection(jdbcUrl,username,password)
+    val statement = connection.createStatement()
+    statement.executeUpdate(s"CREATE DATABASE $dbName;")
+    statement.close()
+    connection.close()
+  }
+
+  def main(args: Array[String]): Unit = {
+
+    println("Hello World")
+    val spark = SparkSession
+      .builder()
+      .appName("POC")
+      //    .enableHiveSupport()
+      .master("local[*]")
+      .getOrCreate()
+
+    spark.sparkContext.setLogLevel("ERROR")
+
+    val jdbc_url = s"jdbc:postgresql://localhost:5432/postgres"
+    val username = args(0)
+    val password = args(1)
+    val dbName = args(2)
+
+    try {
+      val dbConn = DriverManager.getConnection(jdbc_url, username, password)
+
+      val properties = new java.util.Properties() {
+        {
+          put("user", username)
+          put("password", password)
+          put("driver", "org.postgresql.Driver")
+        }
+      }
+
+      import spark.implicits._
+
+      val df1 = spark.read
+        .option("header", value = true)
+        .csv("C:\\data\\POC\\CodeYodha_1.csv")
+
+      val after = df1.dropDuplicates(Seq("E-mail", "Contact Number"))
+
+      after.write.mode("overwrite").jdbc(jdbc_url, "POC", properties)
+      dbConn.close()
+      println("Write Successful")
 
 
-object ingest extends App {
-  println("Hello World")
-  val spark = SparkSession
-    .builder()
-    .appName("POC")
-//    .enableHiveSupport()
-    .master("local[*]")
-    .getOrCreate()
 
-  spark.sparkContext.setLogLevel("ERROR")
-
-  val jdbc_url = "jdbc:postgresql://localhost:5432/mydb"
-  val properties = new java.util.Properties() {{
-    put("user", "myuser")
-    put("password", "mypass")
-    put("driver", "org.postgresql.Driver")
-  }}
+    }
+    catch {
+      case e: java.sql.SQLException if e.getSQLState == "3D000" =>
+        // 3D000 = invalid_catalog_name (database does not exist in PostgreSQL)
+        println(s"Database not found: ${e.getMessage}")
+        createDb(jdbc_url, username, password, dbName)
+        println("The Database has been created")
+        Ingest.main(args)
+      case e: Exception =>
+        if (spark.catalog.databaseExists(s"$dbName")== "true") println("The database already exists. No need to create again")
+        else println(s"Other connection error: ${e.getMessage}")
 
 
-  import spark.implicits._
 
-  val df1 = spark.read
-    .option("header", value = true)
-    .csv("C:\\data\\POC\\CodeYodha_1.csv")
-
-//  val query =
-//    """
-//  CREATE TABLE IF NOT EXISTS your_table_name (
-//    Timestamp STRING,
-//    Name STRING,
-//    Email STRING,
-//    Contact_Number STRING,
-//    Based_Out_Of STRING,
-//    Course STRING,
-//    Specialization STRING,
-//    Technical_Skills STRING,
-//    Next_Steps STRING,
-//    Interested_In_Internship STRING,
-//    Interested_In_Webinars STRING,
-//    Dream_Community_Features STRING,
-//    Preferred_Problem_Types STRING
-//  )
-//  USING hive
-//  """
-
-  df1.write.jdbc(jdbc_url, "my_table", properties)
-
-  println("Write Successful")
-//  println("="*100)
-//  println("Original DF count = " + df1.count())
-//  df1.printSchema()
-//  df1.show()
-//  println("="*100)
-
-  val after = df1.dropDuplicates(Seq("E-mail", "Contact Number"))
-
-//  Duplicate mails & phone numbers dropped
-//  println("="*100)
-//  println("After DF count = " + after.count())
-//  after.show()
-//  println("="*100)
+    }
+  }
 }

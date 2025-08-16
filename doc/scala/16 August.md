@@ -1,0 +1,2 @@
+- **Include `spark-sql` without `"provided"` scope** in your **`build.sbt`** during development/testing:
+- When deploying to a cluster, change scope back to **`"provided"`**

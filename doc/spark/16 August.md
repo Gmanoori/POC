@@ -1,0 +1,9 @@
+- JDBC properties
+    - To connect, we use DriverManager class
+    - using.getConnection() method
+    - And list properties with either
+        - .option(), or
+        - Create a new *properties* class and put user, password, driver in it
+    - Then, we can write to db
+- Using spark.catalog, you can list databases, tables, columns, functions, and manage caching.
+- **`spark.catalog`** object provides a programmatic interface to the Spark Catalog, which manages metadata about databases, tables, functions, and views accessible through your Spark session. It lets you inspect and manipulate metadata in your Spark environment.
