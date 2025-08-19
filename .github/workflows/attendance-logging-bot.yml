@@ -3,7 +3,7 @@ name: Attendance Logger Bot
 on:
   push:
     branches:
-      - main
+      - master
   issue_comment:
     types: [created, edited]
 
