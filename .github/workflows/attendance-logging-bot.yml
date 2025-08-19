@@ -28,22 +28,30 @@ jobs:
           
       
 
-      - name: Check if comment contains /login or /logout command and print welcome message
+      - name: Check if comment contains /login or /logout
         id: check_command
         run: |
-          comment="${{ github.event.comment.body }}"
-          full_name="${{ github.event.comment.user.login }}"
-          first_name="${full_name%%-*}"
-          
-          if [[ "$comment" == *"/login"* ]]; then
-            echo "command=login" >> $GITHUB_OUTPUT
-            echo "greeting=Good Morning, $first_name ! :D" >> $GITHUB_OUTPUT
-          elif [[ "$comment" == *"/logout"* ]]; then
-            echo "command=logout" >> $GITHUB_OUTPUT
-            echo "greeting=See you tomorrow, $first_name ;)" >> $GITHUB_OUTPUT
-          else
-            echo "command=none" >> $GITHUB_OUTPUT
-          fi
+            comment="${{ github.event.comment.body }}"
+            if [[ "$comment" == *"/login"* ]]; then
+              echo "command=login" >> $GITHUB_OUTPUT
+            elif [[ "$comment" == *"/logout"* ]]; then
+              echo "command=logout" >> $GITHUB_OUTPUT
+            else
+              echo "command=none" >> $GITHUB_OUTPUT
+
+      - name: Post login comment
+        if: steps.check_command.outputs.command == 'login'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: 4
+          body: "Welcome $first_name! Your login has been recorded."
+
+      - name: Post logout comment
+        if: steps.check_command.outputs.command == 'logout'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: 4
+          body: "Goodbye $first_name! Your logout has been recorded."
 
       #      - name: Exit if no valid command
       #        if: steps.check_command.outputs.command == 'none'
@@ -132,6 +140,6 @@ jobs:
         with:
           issue-number: 4
           body: |
-            Good Morning ${{ steps.extract_name.first_name }}! :D,
+            Completed!
 #            Your time has been logged as **${{ github.event.comment.created_at }}**.
 #  **${{ steps.check_command.outputs.command }}**
