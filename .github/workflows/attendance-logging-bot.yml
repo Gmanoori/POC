@@ -26,6 +26,7 @@ jobs:
           first_name="${full_name%%-*}"
           echo "first_name=$first_name" >> $GITHUB_OUTPUT
           timestamp="${{ github.event.comment.created_at }}"
+          user="${{ github.event.comment.user.login }}"
 
       #      - name: Check if comment contains /login or /logout command and print welcome message
       #        id: check_command
@@ -130,6 +131,5 @@ jobs:
         with:
           issue-number: ${{ github.event.issue.number }}
           body: |
-            
             Hi @${{ github.event.comment.user.login }},
             Your **${{ steps.check_command.outputs.command }}** time has been logged as **${{ github.event.comment.created_at }}**.
