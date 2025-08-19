@@ -78,6 +78,7 @@ jobs:
           git add test/attendance.md
           git commit -m "Update attendance.md with latest changes" || echo "No changes to commit"
           git push
+          git pull origin master
 
       - name: write to attendance.md for logout
         if: steps.check_command.outputs.command == 'logout'
