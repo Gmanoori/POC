@@ -28,16 +28,18 @@ jobs:
         id: check_command
         run: |
           comment="${{ github.event.comment.body }}"
+          full_name="Gmanoori"
+          first_name="${full_name%%-*}"
+          
           if [[ "$comment" == *"/login"* ]]; then
-            full_name="${{ github.event.comment.user.login }}"
-            first_name="${full_name%%-*}"
-            echo "Good Morning, $first_name ! :D" >> $GITHUB_OUTPUT
+            echo "command=login" >> $GITHUB_OUTPUT
+            echo "greeting=Good Morning, $first_name ! :D" >> $GITHUB_OUTPUT
           elif [[ "$comment" == *"/logout"* ]]; then
-            echo "See you tomorrow, $first_name ;)" >> $GITHUB_OUTPUT
+            echo "command=logout" >> $GITHUB_OUTPUT
+            echo "greeting=See you tomorrow, $first_name ;)" >> $GITHUB_OUTPUT
           else
             echo "command=none" >> $GITHUB_OUTPUT
           fi
-
       - name: Exit if no valid command
         if: steps.check_command.outputs.command == 'none'
         run: |
