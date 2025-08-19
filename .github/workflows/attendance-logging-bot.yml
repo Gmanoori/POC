@@ -80,6 +80,8 @@ jobs:
           FIRST_NAME: ${{ steps.check_command.outputs.first_name }}
           FINAL_DATE: ${{ steps.get_timestamp.outputs.final_date }}
         run: |
+          echo "$LOGIN_TIME"
+          echo "${{ steps.save_login.outputs.login_time }}"
           echo "| $FIRST_NAME | $FINAL_DATE | $LOGIN_TIME | $LOGOUT_TIME |   |" >> test/attendance.md
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
