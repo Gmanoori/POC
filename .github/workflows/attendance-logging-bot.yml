@@ -19,6 +19,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Extract first name from username
+        id: extract_name
+        env:
+          FULL_NAME: ${{ github.event.comment.user.login }}
+        run: |
+          full_name="$FULL_NAME"
+          first_name="${full_name%%-*}"
+          echo "first_name=$first_name" >> $GITHUB_OUTPUT
+
       - name: Check if comment contains /login or /logout
         id: check_command
         env:
