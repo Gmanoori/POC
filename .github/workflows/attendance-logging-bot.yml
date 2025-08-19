@@ -132,8 +132,8 @@ jobs:
       - name: Post confirmation comment
         uses: peter-evans/create-or-update-comment@v4
         with:
-          issue-number: ${{ github.event.issue.number }}
+          issue-number: 4
           body: |
-            Hi "$FULL_NAME",
-            Your time has been logged as **"$TIMESTAMP"**.
+            Hi @${{ steps.extract_name.outputs.user }},
+            Your time has been logged as **${{ steps.extract_name.outputs.timestamp }}**.
 #  **${{ steps.check_command.outputs.command }}**
