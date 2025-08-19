@@ -1,9 +1,6 @@
 name: Attendance Logger Bot
 
 on:
-  push:
-    branches:
-      - attendance-bot
   issue_comment:
     types: [edited]
 
