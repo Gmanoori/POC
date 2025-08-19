@@ -1,7 +1,7 @@
 name: Issue Comment Checklist Bot
 
 on:
-  branches: master
+  branches: main
   issue_comment:
     types: [created]
 
