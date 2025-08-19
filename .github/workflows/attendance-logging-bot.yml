@@ -19,6 +19,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Get comment timestamp
+        id: get_timestamp
+        run: |
+          echo "timestamp=${{ github.event.comment.created_at }}" >> $GITHUB_OUTPUT
+
       - name: Check if comment contains /login or /logout
         id: check_command
         env:
@@ -43,7 +48,7 @@ jobs:
         with:
           issue-number: ${{ github.event.issue.number }}
           body: |
-            Good Morning @${{ steps.check_command.outputs.first_name }}! Your login has been recorded. :D
+            Good Morning @${{ steps.check_command.outputs.first_name }}! :D Your login has been recorded at ${{ steps.get_timestamp.outputs.timestamp }} 
 
       - name: Post logout comment
         if: steps.check_command.outputs.command == 'logout'
@@ -51,7 +56,7 @@ jobs:
         with:
           issue-number: ${{ github.event.issue.number }}
           body: |
-            See You Tomorrow, @${{ steps.check_command.outputs.first_name }}! Your logout has been recorded. ;)
+            See You Tomorrow, @${{ steps.check_command.outputs.first_name }}! ;) Your logout has been recorded at ${{ steps.get_timestamp.outputs.timestamp }}. 
 
 #      - name:
 
