@@ -1,2 +1,2 @@
-| User | Login Time | Logout Time | Work Hours |
-|------|------------|-------------|------------|
+| User | Date | Login Time | Logout Time | Work Hours |
+|------|------|------------|-------------|------------|
