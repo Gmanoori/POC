@@ -21,12 +21,15 @@ jobs:
 
       - name: Extract first name from username
         id: extract_name
+        env:
+          FULL_NAME: ${{ github.event.comment.user.login }}
+          TIMESTAMP: ${{ github.event.comment.created_at }}
         run: |
-          full_name="${{ github.event.comment.user.login }}"
-          first_name="${full_name%%-*}"
-          echo "first_name=$first_name" >> $GITHUB_OUTPUT
-          timestamp="${{ github.event.comment.created_at }}"
-          user="${{ github.event.comment.user.login }}"
+            full_name="$FULL_NAME"
+            first_name="${full_name%%-*}"
+            echo "first_name=$first_name" >> $GITHUB_OUTPUT
+            echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+            echo "user=$FULL_NAME" >> $GITHUB_OUTPUT
 
       #      - name: Check if comment contains /login or /logout command and print welcome message
       #        id: check_command
@@ -131,5 +134,5 @@ jobs:
         with:
           issue-number: ${{ github.event.issue.number }}
           body: |
-            Hi @${{ github.event.comment.user.login }},
-            Your **${{ steps.check_command.outputs.command }}** time has been logged as **${{ github.event.comment.created_at }}**.
+            Hi @$FULL_NAME,
+            Your **${{ steps.check_command.outputs.command }}** time has been logged as **$TIMESTAMP**.
