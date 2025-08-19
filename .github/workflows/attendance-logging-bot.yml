@@ -132,6 +132,6 @@ jobs:
         with:
           issue-number: 4
           body: |
-            Hi @${{ steps.extract_name.first_name }},
+            Good Morning ${{ steps.extract_name.first_name }}! :D,
 #            Your time has been logged as **${{ github.event.comment.created_at }}**.
 #  **${{ steps.check_command.outputs.command }}**
