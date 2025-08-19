@@ -74,12 +74,10 @@ jobs:
       - name: Write to attendance.md at logout
         if: steps.check_command.outputs.command == 'logout'
         env:
-          LOGIN_TIME: ${{ steps.save_login.outputs.login_time }}
-          LOGOUT_TIME: ${{ steps.get_timestamp.outputs.timestamp }}
           FIRST_NAME: ${{ steps.check_command.outputs.first_name }}
           FINAL_DATE: ${{ steps.get_timestamp.outputs.final_date }}
         run: |
-          echo "| $FIRST_NAME | $FINAL_DATE | ${{ steps.save_login.outputs.login_time }} | $LOGOUT_TIME |   |" >> test/attendance.md
+          echo "| $FIRST_NAME | $FINAL_DATE | ${{ steps.save_login.outputs.login_time }} | ${{ steps.get_timestamp.outputs.timestamp }} |   |" >> test/attendance.md
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add test/attendance.md
