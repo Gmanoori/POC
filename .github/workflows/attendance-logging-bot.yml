@@ -67,8 +67,6 @@ jobs:
 
       - name: Save login time
         if: steps.check_command.outputs.command == 'login'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "login_time=${{ steps.get_timestamp.outputs.timestamp }}" >> $GITHUB_OUTPUT
 
