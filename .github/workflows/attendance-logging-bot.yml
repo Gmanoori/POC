@@ -21,32 +21,28 @@ jobs:
 
       - name: Extract first name from username
         id: extract_name
-        env:
-          FULL_NAME: ${{ github.event.comment.user.login }}
-          TIMESTAMP: ${{ github.event.comment.created_at }}
         run: |
-            full_name="$FULL_NAME"
-            first_name="${full_name%%-*}"
+            full_name="${{ github.event.comment.user.login }}"
+            first_name=${echo "$full_name" | cut -d "-" -f1 )
             echo "first_name=$first_name" >> $GITHUB_OUTPUT
-            echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
-            echo "user=$FULL_NAME" >> $GITHUB_OUTPUT
 
-      #      - name: Check if comment contains /login or /logout command and print welcome message
-      #        id: check_command
-      #        run: |
-      #          comment="${{ github.event.comment.body }}"
-      #          full_name="Gmanoori"
-      #          first_name="${full_name%%-*}"
-      #
-      #          if [[ "$comment" == *"/login"* ]]; then
-      #            echo "command=login" >> $GITHUB_OUTPUT
-      #            echo "greeting=Good Morning, $first_name ! :D" >> $GITHUB_OUTPUT
-      #          elif [[ "$comment" == *"/logout"* ]]; then
-      #            echo "command=logout" >> $GITHUB_OUTPUT
-      #            echo "greeting=See you tomorrow, $first_name ;)" >> $GITHUB_OUTPUT
-      #          else
-      #            echo "command=none" >> $GITHUB_OUTPUT
-      #          fi
+      - name: Check if comment contains /login or /logout command and print welcome message
+        id: check_command
+        run: |
+          comment="${{ github.event.comment.body }}"
+          full_name="Gmanoori"
+          first_name="${full_name%%-*}"
+          
+          if [[ "$comment" == *"/login"* ]]; then
+            echo "command=login" >> $GITHUB_OUTPUT
+            echo "greeting=Good Morning, $first_name ! :D" >> $GITHUB_OUTPUT
+          elif [[ "$comment" == *"/logout"* ]]; then
+            echo "command=logout" >> $GITHUB_OUTPUT
+            echo "greeting=See you tomorrow, $first_name ;)" >> $GITHUB_OUTPUT
+          else
+            echo "command=none" >> $GITHUB_OUTPUT
+          fi
+
       #      - name: Exit if no valid command
       #        if: steps.check_command.outputs.command == 'none'
       #        run: |
