@@ -67,10 +67,17 @@ jobs:
 
       - name: write to attendance.md
         if: steps.check_command.outputs.command == 'login'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cat >> test/attendance.md <<EOF
           | ${{ github.event.comment.user.login }} | ${{ steps.get_timestamp.outputs.final_date }} | ${{ steps.get_timestamp.outputs.timestamp }} |   |  |
           EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add test/attendance.md
+          git commit -m "Update attendance.md with latest changes" || echo "No changes to commit"
+          git push
 
       - name: write to attendance.md for logout
         if: steps.check_command.outputs.command == 'logout'
