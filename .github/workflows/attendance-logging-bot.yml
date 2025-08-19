@@ -82,6 +82,11 @@ jobs:
 
       - name: Read login time from file
         if: steps.check_command.outputs.command == 'logout'
+        env:
+          LOGIN_TIME: ${{ steps.save_login.outputs.login_time }}
+          LOGOUT_TIME: ${{ steps.get_timestamp.outputs.timestamp }}
+          FIRST_NAME: ${{ steps.check_command.outputs.first_name }}
+          FINAL_DATE: ${{ steps.get_timestamp.outputs.final_date }}
         run: |
           cat test/login_time.txt
           IFS='|' read -r LOGIN_USER LOGIN_DATE LOGIN_TIME < test/login_time.txt
