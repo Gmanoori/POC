@@ -21,8 +21,13 @@ jobs:
 
       - name: Get comment timestamp
         id: get_timestamp
+        env:
+          RAW_TIMESTAMP: ${{ github.event.comment.created_at }}
         run: |
-          echo "timestamp=${{ github.event.comment.created_at }}" >> $GITHUB_OUTPUT
+          epoch_seconds=$(date -d "$RAW_TIMESTAMP" +%s)
+          ist_seconds=$((epoch_seconds + 19800))
+          ist_time=$(date -u -d "@$ist_seconds" "+%H:%M")
+          echo "timestamp=$ist_time" >> $GITHUB_OUTPUT
 
       - name: Check if comment contains /login or /logout
         id: check_command
