@@ -1,7 +1,9 @@
-name: Attendance Logger Bot (CSV)
+name: Attendance Logger Bot
 
 on:
-  branches: attendance-bot
+  push:
+    branches:
+      - attendance-bot
   issue_comment:
     types: [created]
 
