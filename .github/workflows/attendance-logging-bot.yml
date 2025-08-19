@@ -134,5 +134,6 @@ jobs:
         with:
           issue-number: ${{ github.event.issue.number }}
           body: |
-            Hi @$FULL_NAME,
-            Your **${{ steps.check_command.outputs.command }}** time has been logged as **$TIMESTAMP**.
+            Hi "$FULL_NAME",
+            Your time has been logged as **"$TIMESTAMP"**.
+#  **${{ steps.check_command.outputs.command }}**
