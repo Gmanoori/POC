@@ -27,7 +27,7 @@ jobs:
           epoch_seconds=$(date -d "$RAW_TIMESTAMP" +%s)
           ist_seconds=$((epoch_seconds + 19800))
           ist_time=$(date -u -d "@$ist_seconds" "+%H:%M")
-          final_date=$(date -d "$RAW_TIMESTAMP" "+%dd:%mm:%YYYY")
+          final_date=$(date -d "$RAW_TIMESTAMP" "+%d-%m-%Y")
           echo "timestamp=$ist_time" >> $GITHUB_OUTPUT
           echo "$final_date" >> $GITHUB_OUTPUT
 
