@@ -39,14 +39,14 @@ jobs:
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: 4
-          body: "Welcome ${{ first_name }}! Your login has been recorded."
+          body: "Welcome $first_name! Your login has been recorded."
 
       - name: Post logout comment
         if: steps.check_command.outputs.command == 'logout'
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: 4
-          body: "Goodbye ${{ first_name }}! Your logout has been recorded."
+          body: "Goodbye $first_name! Your logout has been recorded."
 
 
       - name: Post confirmation comment
