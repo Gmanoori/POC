@@ -43,7 +43,7 @@ jobs:
         with:
           issue-number: ${{ github.event.issue.number }}
           body: |
-            Welcome @${{ steps.check_command.outputs.first_name }}! Your login has been recorded.
+            Good Morning @${{ steps.check_command.outputs.first_name }}! Your login has been recorded. :D
 
       - name: Post logout comment
         if: steps.check_command.outputs.command == 'logout'
@@ -51,7 +51,7 @@ jobs:
         with:
           issue-number: ${{ github.event.issue.number }}
           body: |
-            Goodbye @${{ steps.check_command.outputs.first_name }}! Your logout has been recorded.
+            See You Tomorrow, @${{ steps.check_command.outputs.first_name }}! Your logout has been recorded. ;)
 
 #      - name:
 
