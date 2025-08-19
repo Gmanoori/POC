@@ -71,7 +71,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cat >> test/attendance.md <<EOF
-          | ${{ github.event.comment.user.login }} | ${{ steps.get_timestamp.outputs.final_date }} | ${{ steps.get_timestamp.outputs.timestamp }} |   |  |
+          | ${{ steps.check_command.outputs.first_name }} | ${{ steps.get_timestamp.outputs.final_date }} | ${{ steps.get_timestamp.outputs.timestamp }} |   |  |
           EOF
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
