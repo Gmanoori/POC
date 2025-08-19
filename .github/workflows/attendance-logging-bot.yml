@@ -86,3 +86,9 @@ jobs:
           cat >> test/attendance.md <<EOF
           | ${{ steps.check_command.outputs.first_name }} |  |  |  |  ${{ steps.get_timestamp.outputs.timestamp }} |
           EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add test/attendance.md
+          git commit -m "Update attendance.md with latest changes" || echo "No changes to commit"
+          git push
+          git pull origin master
