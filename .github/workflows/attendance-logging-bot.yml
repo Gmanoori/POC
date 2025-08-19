@@ -5,7 +5,7 @@ on:
     branches:
       - attendance-bot
   issue_comment:
-    types: [created]
+    types: [edited]
 
 permissions:
   contents: write
@@ -134,6 +134,6 @@ jobs:
         with:
           issue-number: 4
           body: |
-            Hi @${{ steps.extract_name.outputs.user }},
-            Your time has been logged as **${{ steps.extract_name.outputs.timestamp }}**.
+            Hi @$${{ github.event.comment.user.login }},
+            Your time has been logged as **${{ github.event.comment.created_at }}**.
 #  **${{ steps.check_command.outputs.command }}**
