@@ -69,25 +69,49 @@ jobs:
         id: save_login
         if: steps.check_command.outputs.command == 'login'
         run: |
-          echo "login_time=${{ steps.get_timestamp.outputs.timestamp }}" >> $GITHUB_OUTPUT
-          echo "Saved"
+          echo "${{ steps.check_command.outputs.first_name }}|${{ steps.get_timestamp.outputs.final_date }}|${{ steps.get_timestamp.outputs.timestamp }}" > test/login_time.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add test/login_time.txt
+          git commit -m "Save login time for ${{ steps.get_timestamp.outputs.final_date }}" || echo "No changes to commit"
+          git push
 
-      - name: Write to attendance.md at logout
+#        run: |
+#          echo "login_time=${{ steps.get_timestamp.outputs.timestamp }}" >> $GITHUB_OUTPUT
+#          echo "Saved"
+
+      - name: Read login time from file
         if: steps.check_command.outputs.command == 'logout'
-        env:
-          LOGIN_TIME: ${{ steps.save_login.outputs.login_time }}
-          LOGOUT_TIME: ${{ steps.get_timestamp.outputs.timestamp }}
-          FIRST_NAME: ${{ steps.check_command.outputs.first_name }}
-          FINAL_DATE: ${{ steps.get_timestamp.outputs.final_date }}
         run: |
-          echo "$LOGIN_TIME"
-          echo "${{ steps.save_login.outputs.login_time }}"
-          echo "| $FIRST_NAME | $FINAL_DATE | $LOGIN_TIME | $LOGOUT_TIME |   |" >> test/attendance.md
+          cat test/login_time.txt
+          IFS='|' read -r LOGIN_USER LOGIN_DATE LOGIN_TIME < test/login_time.txt
+          LOGOUT_TIME=${{ steps.get_timestamp.outputs.timestamp }}
+          echo "| $LOGIN_USER | $LOGIN_DATE | $LOGIN_TIME | $LOGOUT_TIME |   |" >> test/attendance.md
+          echo "" > test/login_time.txt
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add test/attendance.md
           git commit -m "Added attendance for ${{ steps.get_timestamp.outputs.final_date }}" || echo "No changes to commit"
           git push
           git pull origin master
+
+
+#      - name: Write to attendance.md at logout
+#        if: steps.check_command.outputs.command == 'logout'
+#        env:
+#          LOGIN_TIME: ${{ steps.save_login.outputs.login_time }}
+#          LOGOUT_TIME: ${{ steps.get_timestamp.outputs.timestamp }}
+#          FIRST_NAME: ${{ steps.check_command.outputs.first_name }}
+#          FINAL_DATE: ${{ steps.get_timestamp.outputs.final_date }}
+#        run: |
+#          echo "$LOGIN_TIME"
+#          echo "${{ steps.save_login.outputs.login_time }}"
+#          echo "| $FIRST_NAME | $FINAL_DATE | $LOGIN_TIME | $LOGOUT_TIME |   |" >> test/attendance.md
+#          git config user.name "github-actions[bot]"
+#          git config user.email "github-actions[bot]@users.noreply.github.com"
+#          git add test/attendance.md
+#          git commit -m "Added attendance for ${{ steps.get_timestamp.outputs.final_date }}" || echo "No changes to commit"
+#          git push
+#          git pull origin master
 
 # to-do: variable in login. write at logout
