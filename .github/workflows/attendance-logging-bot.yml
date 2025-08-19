@@ -27,7 +27,9 @@ jobs:
           epoch_seconds=$(date -d "$RAW_TIMESTAMP" +%s)
           ist_seconds=$((epoch_seconds + 19800))
           ist_time=$(date -u -d "@$ist_seconds" "+%H:%M")
+          final_date=$(date -d "$RAW_TIMESTAMP" "+%dd:%mm:%YYYY")
           echo "timestamp=$ist_time" >> $GITHUB_OUTPUT
+          echo "$final_date" >> $GITHUB_OUTPUT
 
       - name: Check if comment contains /login or /logout
         id: check_command
@@ -63,12 +65,16 @@ jobs:
           body: |
             See You Tomorrow, @${{ steps.check_command.outputs.first_name }}! ;) Your logout has been recorded at ${{ steps.get_timestamp.outputs.timestamp }}. 
 
-#      - name:
+      - name: write to attendance.md
+        if: steps.check_command.outputs.command == 'login'
+        run: |
+          cat >> test/attendance.md <<EOF
+          | ${{ github.event.comment.user.login }} | ${{ steps.get_timestamp.outputs.final_date }} | ${{ steps.get_timestamp.outputs.timestamp }} |   |  |
+          EOF
 
-#      - name: Post confirmation comment
-#        if: steps.check_command.outputs.command != 'none'
-#        uses: peter-evans/create-or-update-comment@v4
-#        with:
-#          issue-number: ${{ github.event.issue.number }}
-#          body: |
-#            Completed! Your command **${{ steps.check_command.outputs.command }}** was processed at ${{ github.event.comment.created_at }}.
+      - name: write to attendance.md for logout
+        if: steps.check_command.outputs.command == 'logout'
+        run: |
+          cat >> test/attendance.md <<EOF
+          | ${{ github.event.comment.user.login }} |  |  |  |  ${{ steps.get_timestamp.outputs.timestamp }} |
+          EOF
