@@ -30,7 +30,7 @@ jobs:
         id: check_command
         run: |
           comment="${{ github.event.comment.body }}"
-          full_name="Gmanoori"
+          full_name="${{ github.event.comment.user.login }}"
           first_name="${full_name%%-*}"
           
           if [[ "$comment" == *"/login"* ]]; then
