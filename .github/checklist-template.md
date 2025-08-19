@@ -1,4 +1,4 @@
-### Date: {{ Today }}
+### Date: {{ today }}
 
 - [ ] Morning
 - [ ] Afternoon
