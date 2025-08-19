@@ -12,7 +12,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check if comment contains /hello command
+      - name: Check if comment contains /checklist command
         id: check_command
         run: |
           if [[ "${{ github.event.comment.body }}" == *"/checklist"* ]]; then
