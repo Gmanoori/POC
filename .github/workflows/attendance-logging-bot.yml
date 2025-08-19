@@ -84,7 +84,7 @@ jobs:
         if: steps.check_command.outputs.command == 'logout'
         run: |
           cat >> test/attendance.md <<EOF
-          | ${{ steps.check_command.outputs.first_name }} |  |  |  |  ${{ steps.get_timestamp.outputs.timestamp }} |
+          | ${{ steps.check_command.outputs.first_name }} | ${{ steps.get_timestamp.outputs.final_date }} |  | ${{ steps.get_timestamp.outputs.timestamp }} |   |
           EOF
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -92,3 +92,4 @@ jobs:
           git commit -m "Update attendance.md with logout time" || echo "No changes to commit"
           git push
           git pull origin master
+# to-do: variable in login. write at logout
