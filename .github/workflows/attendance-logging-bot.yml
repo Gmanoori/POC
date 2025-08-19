@@ -89,4 +89,5 @@ jobs:
           git commit -m "Added attendance for ${{ steps.get_timestamp.outputs.final_date }}" || echo "No changes to commit"
           git push
           git pull origin master
+
 # to-do: variable in login. write at logout
