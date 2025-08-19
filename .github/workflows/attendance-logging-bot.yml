@@ -23,8 +23,10 @@ jobs:
         id: extract_name
         run: |
             full_name="${{ github.event.comment.user.login }}"
-            first_name=${echo "$full_name" | cut -d "-" -f1 )
+            first_name="${full_name%%-*}"
             echo "first_name=$first_name" >> $GITHUB_OUTPUT
+          
+      
 
       - name: Check if comment contains /login or /logout command and print welcome message
         id: check_command
@@ -130,6 +132,6 @@ jobs:
         with:
           issue-number: 4
           body: |
-            Hi @$${{ github.event.comment.user.login }},
-            Your time has been logged as **${{ github.event.comment.created_at }}**.
+            Hi @${{ steps.extract_name.first_name }},
+#            Your time has been logged as **${{ github.event.comment.created_at }}**.
 #  **${{ steps.check_command.outputs.command }}**
