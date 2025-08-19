@@ -29,7 +29,7 @@ jobs:
           ist_time=$(date -u -d "@$ist_seconds" "+%H:%M")
           final_date=$(date -d "$RAW_TIMESTAMP" "+%d-%m-%Y")
           echo "timestamp=$ist_time" >> $GITHUB_OUTPUT
-          echo "$final_date" >> $GITHUB_OUTPUT
+          echo "final_date=s$final_date" >> $GITHUB_OUTPUT
 
       - name: Check if comment contains /login or /logout
         id: check_command
