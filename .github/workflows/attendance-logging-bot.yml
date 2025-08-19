@@ -19,20 +19,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract first name from username
-        id: extract_name
+      - name: Check if comment contains /login or /logout
+        id: check_command
         env:
+          COMMENT_BODY: ${{ github.event.comment.body || '' }}
           FULL_NAME: ${{ github.event.comment.user.login }}
         run: |
           full_name="$FULL_NAME"
           first_name="${full_name%%-*}"
           echo "first_name=$first_name" >> $GITHUB_OUTPUT
-
-      - name: Check if comment contains /login or /logout
-        id: check_command
-        env:
-          COMMENT_BODY: ${{ github.event.comment.body || '' }}
-        run: |
           comment="$COMMENT_BODY"
           if [[ "$comment" == *"/login"* ]]; then
             echo "command=login" >> $GITHUB_OUTPUT
@@ -48,7 +43,7 @@ jobs:
         with:
           issue-number: ${{ github.event.issue.number }}
           body: |
-            Welcome @${{ steps.extract_name.outputs.first_name }}! Your login has been recorded.
+            Welcome @${{ steps.check_command.outputs.first_name }}! Your login has been recorded.
 
       - name: Post logout comment
         if: steps.check_command.outputs.command == 'logout'
@@ -56,14 +51,14 @@ jobs:
         with:
           issue-number: ${{ github.event.issue.number }}
           body: |
-            Goodbye @${{ steps.extract_name.outputs.first_name }}! Your logout has been recorded.
+            Goodbye @${{ steps.check_command.outputs.first_name }}! Your logout has been recorded.
 
 #      - name:
 
-      - name: Post confirmation comment
-        if: steps.check_command.outputs.command != 'none'
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          issue-number: ${{ github.event.issue.number }}
-          body: |
-            Completed! Your command **${{ steps.check_command.outputs.command }}** was processed at ${{ github.event.comment.created_at }}.
+#      - name: Post confirmation comment
+#        if: steps.check_command.outputs.command != 'none'
+#        uses: peter-evans/create-or-update-comment@v4
+#        with:
+#          issue-number: ${{ github.event.issue.number }}
+#          body: |
+#            Completed! Your command **${{ steps.check_command.outputs.command }}** was processed at ${{ github.event.comment.created_at }}.
