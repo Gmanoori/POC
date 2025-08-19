@@ -45,9 +45,9 @@ object Ingest{
 
       val df1 = spark.read
         .option("header", value = true)
-        .csv("C:\\data\\POC\\CodeYodha_1.csv")
+        .csv("C:\\programs\\Database\\data\\CodeYodha_Final.csv")
 
-      val after = df1.dropDuplicates(Seq("E-mail", "Contact Number"))
+      val after = df1.dropDuplicates(Seq("E-mail", "Contact"))
 
       after.write.mode("overwrite").jdbc(jdbc_url, "POC", properties)
       dbConn.close()

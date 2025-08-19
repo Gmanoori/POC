@@ -1,0 +1,42 @@
+name: Issue Comment Checklist Bot
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  comment-checklist:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check if comment contains /hello command
+        id: check_command
+        run: |
+          if [[ "${{ github.event.comment.body }}" == *"/checklist"* ]]; then
+            echo "command_found=true" >> $GITHUB_OUTPUT
+          else
+            echo "command_found=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Exit if no command
+        if: steps.check_command.outputs.command_found != 'true'
+        run: |
+          echo "Skipping bot as command not found."
+          exit 0
+
+      - name: Render checklist template with today’s date
+        id: render
+        uses: chuhlomin/render-template@v1.4
+        with:
+          template: .github/checklist-template.md
+          vars: |
+            today: ${{ github.event.comment.created_at }}
+
+      - name: Post checklist comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: ${{ steps.render.outputs.result }}
