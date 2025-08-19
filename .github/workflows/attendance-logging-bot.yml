@@ -94,7 +94,7 @@ jobs:
           diff_sec=$(( $(date -d "today $LOGOUT_TIME" +%s) - $(date -d "today $LOGIN_TIME" +%s) ))
           work_hours=$(printf "%02d:%02d\n" $((diff_sec/3600)) $(((diff_sec%3600)/60)))
           echo "| $FIRST_NAME | $FINAL_DATE | $LOGIN_TIME | $LOGOUT_TIME | $work_hours |" >> test/attendance.md
-          echo "" > test/login_time.txt
+          rm test/login_time.txt
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add test/attendance.md
