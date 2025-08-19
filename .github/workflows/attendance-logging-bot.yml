@@ -69,6 +69,7 @@ jobs:
         if: steps.check_command.outputs.command == 'login'
         run: |
           echo "login_time=${{ steps.get_timestamp.outputs.timestamp }}" >> $GITHUB_OUTPUT
+          echo "Saved"
 
       - name: Write to attendance.md at logout
         if: steps.check_command.outputs.command == 'logout'
