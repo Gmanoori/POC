@@ -1,3 +1,4 @@
+### Hello {{ .first_name }}!
 ### Date: {{ .today }}
 
 - [ ] Morning

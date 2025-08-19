@@ -30,13 +30,21 @@ jobs:
           echo "Skipping bot as command not found."
           exit 0
 
-      - name: Render checklist template with today’s date
+      - name: Extract first name from username
+        id: extract_name
+        run: |
+          full_name="${{ github.event.comment.user.login }}"
+          first_name="${full_name%%-*}"
+          echo "first_name=$first_name" >> $GITHUB_OUTPUT
+
+      - name: Render checklist template with first name and today’s date
         id: render
         uses: chuhlomin/render-template@v1.4
         with:
           template: .github/checklist-template.md
           vars: |
             today: ${{ github.event.comment.created_at }}
+            first_name: ${{ steps.extract_name.outputs.first_name }}
 
       - name: Post checklist comment
         uses: peter-evans/create-or-update-comment@v4
