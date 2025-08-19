@@ -25,109 +25,111 @@ jobs:
           full_name="${{ github.event.comment.user.login }}"
           first_name="${full_name%%-*}"
           echo "first_name=$first_name" >> $GITHUB_OUTPUT
-
-      - name: Check if comment contains /login or /logout command and print welcome message
-        id: check_command
-        run: |
-          comment="${{ github.event.comment.body }}"
-          full_name="Gmanoori"
-          first_name="${full_name%%-*}"
-          
-          if [[ "$comment" == *"/login"* ]]; then
-            echo "command=login" >> $GITHUB_OUTPUT
-            echo "greeting=Good Morning, $first_name ! :D" >> $GITHUB_OUTPUT
-          elif [[ "$comment" == *"/logout"* ]]; then
-            echo "command=logout" >> $GITHUB_OUTPUT
-            echo "greeting=See you tomorrow, $first_name ;)" >> $GITHUB_OUTPUT
-          else
-            echo "command=none" >> $GITHUB_OUTPUT
-          fi
-      - name: Exit if no valid command
-        if: steps.check_command.outputs.command == 'none'
-        run: |
-          echo "No /login or /logout command found. Exiting."
-          exit 0
-
-      - name: Update attendance.md with work hours
-        id: update_attendance_md
-        run: |
-          user="${{ github.event.comment.user.login }}"
-          command="${{ steps.check_command.outputs.command }}"
           timestamp="${{ github.event.comment.created_at }}"
-          
-          # Convert timestamp to standardized format
-          datetime=$(date -d "$timestamp" "+%Y-%m-%d %H:%M:%S")
-          
-          # Create attendance.md if missing, with Work Hours header
-          if [ ! -f attendance.md ]; then
-            echo "| User | Login Time | Logout Time | Work Hours |" > attendance.md
-            echo "|------|------------|-------------|------------|" >> attendance.md
-          fi
-          
-          # Prepare temporary files for processing
-          tail -n +3 attendance.md > attendance_body.tmp || echo "" > attendance_body.tmp
-          
-          # Remove the current user's old line
-          grep -vE "^\| $user \|" attendance_body.tmp > attendance_body_filtered.tmp || echo "" > attendance_body_filtered.tmp
-          
-          # Extract existing login/logout times
-          login_time=""
-          logout_time=""
-          existing_line=$(grep "^\| $user \|" attendance.md || echo "")
-          
-          if [ -n "$existing_line" ]; then
-            login_time=$(echo "$existing_line" | awk -F'|' '{print $3}' | xargs)
-            logout_time=$(echo "$existing_line" | awk -F'|' '{print $4}' | xargs)
-          fi
-          
-          # Update login/logout based on command
-          if [ "$command" = "login" ]; then
-            login_time="$datetime"
-          elif [ "$command" = "logout" ]; then
-            logout_time="$datetime"
-          fi
-          
-          # Calculate work hours if both timestamps exist (in decimal hours)
-          work_hours=""
-          if [ -n "$login_time" ] && [ -n "$logout_time" ]; then
-            # Convert to seconds since epoch
-            login_epoch=$(date -d "$login_time" +%s)
-            logout_epoch=$(date -d "$logout_time" +%s)
-            diff_sec=$((logout_epoch - login_epoch))
-          
-            if [ $diff_sec -ge 0 ]; then
-              # Convert seconds to hours with 2 decimal places
-              hours=$(echo "scale=2; $diff_sec / 3600" | bc)
-              work_hours="$hours"
-            fi
-          fi
-          
-          # Append updated line to attendance data
-          echo "| $user | $login_time | $logout_time | $work_hours |" >> attendance_body_filtered.tmp
-          
-          # Rebuild attendance.md with updated content
-          echo "| User | Login Time | Logout Time | Work Hours |" > attendance.md
-          echo "|------|------------|-------------|------------|" >> attendance.md
-          cat attendance_body_filtered.tmp >> attendance.md
-          
-          # Clean up temp files
-          rm attendance_body.tmp attendance_body_filtered.tmp
-      
 
-      - name: Commit and push attendance updates
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add attendance.csv
-          git commit -m "Update attendance for ${{ github.event.comment.user.login }} - ${{ steps.check_command.outputs.command }}"
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      - name: Check if comment contains /login or /logout command and print welcome message
+#        id: check_command
+#        run: |
+#          comment="${{ github.event.comment.body }}"
+#          full_name="Gmanoori"
+#          first_name="${full_name%%-*}"
+#
+#          if [[ "$comment" == *"/login"* ]]; then
+#            echo "command=login" >> $GITHUB_OUTPUT
+#            echo "greeting=Good Morning, $first_name ! :D" >> $GITHUB_OUTPUT
+#          elif [[ "$comment" == *"/logout"* ]]; then
+#            echo "command=logout" >> $GITHUB_OUTPUT
+#            echo "greeting=See you tomorrow, $first_name ;)" >> $GITHUB_OUTPUT
+#          else
+#            echo "command=none" >> $GITHUB_OUTPUT
+#          fi
+#      - name: Exit if no valid command
+#        if: steps.check_command.outputs.command == 'none'
+#        run: |
+#          echo "No /login or /logout command found. Exiting."
+#          exit 0
+#
+#      - name: Update attendance.md with work hours
+#        id: update_attendance_md
+#        run: |
+#          user="${{ github.event.comment.user.login }}"
+#          command="${{ steps.check_command.outputs.command }}"
+#          timestamp="${{ github.event.comment.created_at }}"
+#
+#          # Convert timestamp to standardized format
+#          datetime=$(date -d "$timestamp" "+%Y-%m-%d %H:%M:%S")
+#
+#          # Create attendance.md if missing, with Work Hours header
+#          if [ ! -f attendance.md ]; then
+#            echo "| User | Login Time | Logout Time | Work Hours |" > attendance.md
+#            echo "|------|------------|-------------|------------|" >> attendance.md
+#          fi
+#
+#          # Prepare temporary files for processing
+#          tail -n +3 attendance.md > attendance_body.tmp || echo "" > attendance_body.tmp
+#
+#          # Remove the current user's old line
+#          grep -vE "^\| $user \|" attendance_body.tmp > attendance_body_filtered.tmp || echo "" > attendance_body_filtered.tmp
+#
+#          # Extract existing login/logout times
+#          login_time=""
+#          logout_time=""
+#          existing_line=$(grep "^\| $user \|" attendance.md || echo "")
+#
+#          if [ -n "$existing_line" ]; then
+#            login_time=$(echo "$existing_line" | awk -F'|' '{print $3}' | xargs)
+#            logout_time=$(echo "$existing_line" | awk -F'|' '{print $4}' | xargs)
+#          fi
+#
+#          # Update login/logout based on command
+#          if [ "$command" = "login" ]; then
+#            login_time="$datetime"
+#          elif [ "$command" = "logout" ]; then
+#            logout_time="$datetime"
+#          fi
+#
+#          # Calculate work hours if both timestamps exist (in decimal hours)
+#          work_hours=""
+#          if [ -n "$login_time" ] && [ -n "$logout_time" ]; then
+#            # Convert to seconds since epoch
+#            login_epoch=$(date -d "$login_time" +%s)
+#            logout_epoch=$(date -d "$logout_time" +%s)
+#            diff_sec=$((logout_epoch - login_epoch))
+#
+#            if [ $diff_sec -ge 0 ]; then
+#              # Convert seconds to hours with 2 decimal places
+#              hours=$(echo "scale=2; $diff_sec / 3600" | bc)
+#              work_hours="$hours"
+#            fi
+#          fi
+#
+#          # Append updated line to attendance data
+#          echo "| $user | $login_time | $logout_time | $work_hours |" >> attendance_body_filtered.tmp
+#
+#          # Rebuild attendance.md with updated content
+#          echo "| User | Login Time | Logout Time | Work Hours |" > attendance.md
+#          echo "|------|------------|-------------|------------|" >> attendance.md
+#          cat attendance_body_filtered.tmp >> attendance.md
+#
+#          # Clean up temp files
+#          rm attendance_body.tmp attendance_body_filtered.tmp
+#
+#
+#      - name: Commit and push attendance updates
+#        run: |
+#          git config user.name "github-actions[bot]"
+#          git config user.email "github-actions[bot]@users.noreply.github.com"
+#          git add attendance.csv
+#          git commit -m "Update attendance for ${{ github.event.comment.user.login }} - ${{ steps.check_command.outputs.command }}"
+#          git push
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Post confirmation comment
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.issue.number }}
           body: |
+            
             Hi @${{ github.event.comment.user.login }},
             Your **${{ steps.check_command.outputs.command }}** time has been logged as **${{ github.event.comment.created_at }}**.
