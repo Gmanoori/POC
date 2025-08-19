@@ -1,7 +1,7 @@
 name: Attendance Logger Bot
 
 on:
-  issue_comment:
+  issue:
     types: [edited]
 
 permissions:
