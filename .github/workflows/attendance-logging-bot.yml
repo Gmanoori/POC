@@ -83,5 +83,5 @@ jobs:
         if: steps.check_command.outputs.command == 'logout'
         run: |
           cat >> test/attendance.md <<EOF
-          | ${{ github.event.comment.user.login }} |  |  |  |  ${{ steps.get_timestamp.outputs.timestamp }} |
+          | ${{ steps.check_command.outputs.first_name }} |  |  |  |  ${{ steps.get_timestamp.outputs.timestamp }} |
           EOF
