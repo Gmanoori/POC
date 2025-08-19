@@ -35,6 +35,7 @@ jobs:
             echo "See you tomorrow, $first_name ;)" >> $GITHUB_OUTPUT
           else
             echo "command=none" >> $GITHUB_OUTPUT
+          fi
 
       - name: Exit if no valid command
         if: steps.check_command.outputs.command == 'none'
