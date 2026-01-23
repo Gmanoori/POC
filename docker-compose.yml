@@ -1,0 +1,102 @@
+version: '3.8'
+
+x-airflow-common:
+  &airflow-common
+  image: apache/airflow:3.1.6
+  environment: &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__FERNET_KEY: ''
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./data:/opt/airflow/data
+    - ./logs:/opt/airflow/logs
+    - ./spark-jars:/opt/spark-jars
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres_db_volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      timeout: 30s
+      retries: 50
+      start_period: 40s
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - 8080:8080
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        function ver() {
+          printf "%04d%04d%04d%04d" $${1//./ }
+        }
+        airflowdb_version=$$(airflow version)
+        airflowdb_expected_version=2.9.0
+        if [[ -z "${airflowdb_version}" || "$(ver $${airflowdb_version})" -lt "$(ver $${airflowdb_expected_version})" ]]; then
+          airflow db migrate
+          airflow users create \
+            --username admin \
+            --firstname Admin \
+            --lastname User \
+            --role Admin \
+            --email admin@example.com \
+            --password admin
+        fi
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_UPGRADE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: $${AIRFLOW__WEBSERVER__DEFAULT_USER_LOGIN:-admin}
+      _AIRFLOW_WWW_USER_PASSWORD: $${AIRFLOW__WEBSERVER__DEFAULT_USER_PASSWORD:-admin}
+
+  spark-local:
+    image: apache/spark:3.5.0-scala2.12-java11-ubuntu
+    user: root
+    environment:
+      - SPARK_MODE=client
+    volumes:
+      - ./spark-jars:/opt/spark-jars:ro
+      - ./data:/opt/spark/data
+    command: tail -f /dev/null  # Keep container alive
+    working_dir: /opt/spark
+    ports:
+      - "4040:4040"  # Spark UI
+
+volumes:
+  postgres_db_volume:
