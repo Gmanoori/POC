@@ -1,9 +1,10 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.operators.bash import BashOperator
 from datetime import datetime, timedelta
 import requests
 import json
-import pendulum  # For timezone-aware scheduling
+# import pendulum  # For timezone-aware scheduling
 
 default_args = {
     'owner': 'yourname',
@@ -19,12 +20,17 @@ def fetch_stock_data(**context):
     for symbol in symbols:
         url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={api_key}'
         resp = requests.get(url).json()
+        print(resp)  # Debugging line to inspect the response
         daily_data = resp.get('Time Series (Daily)', {})
-        # Filter for execution_date or latest
-        latest = daily_data.get(execution_date, list(daily_data.values())[0])
-        data[symbol] = latest
+        # Save full time series with dates intact
+        first_date = daily_data.keys()[0]
+        print(first_date)
+        first_record = daily_data[first_date]
+        print(first_record)
+        data = data | {symbol: first_record}  # Append only the most recent day's data
+        # data[symbol] = daily_data
     # Save to landing zone
-    with open(f'/path/to/landing/{execution_date}_stocks.json', 'w') as f:
+    with open(f'/opt/airflow/data/landing/{execution_date}_stocks.json', 'w') as f:
         json.dump(data, f)
 
     # Multiple Format Changes. TODO: Implement later
@@ -39,7 +45,7 @@ def fetch_stock_data(**context):
 dag = DAG(
     'stock_daily_ingest',
     default_args=default_args,
-    schedule=pendulum.CronExpression('0 21 * * 1-5', tz='America/New_York'),  # 4 PM ET weekdays (post-close)
+    schedule='1 0 * * *',  # 4 PM ET weekdays (post-close)
     start_date=datetime(2026, 1, 21),
     catchup=False
 )
@@ -52,7 +58,7 @@ fetch_task = PythonOperator(
 
 spark_etl = BashOperator(
     task_id='spark_process',
-    bash_command='spark-submit --class StockETL /path/to/your-poc/target/scala-2.12/poc_2.12-0.1.0.jar {{ ds }}',
+    bash_command='spark-submit --class MultiFormat /path/to/your-poc/target/scala-2.12/poc_2.12-0.1.0.jar {{ ds }}',
     dag=dag
 )
 
