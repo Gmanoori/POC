@@ -4,62 +4,107 @@ from airflow.operators.bash import BashOperator
 from datetime import datetime, timedelta
 import requests
 import json
-# import pendulum  # For timezone-aware scheduling
+import os
+
+
+# ---------------- DAG DEFAULTS ---------------- #
 
 default_args = {
-    'owner': 'yourname',
-    'retries': 3,
-    'retry_delay': timedelta(minutes=5)
+    "owner": "yourname",
+    "retries": 3,
+    "retry_delay": timedelta(minutes=5),
+    "execution_timeout": timedelta(minutes=10),
 }
 
+
+# ---------------- INGESTION TASK ---------------- #
+
 def fetch_stock_data(**context):
-    api_key = 'MDTU6XUYX06CRQKN'
-    symbols = ['AAPL', 'TSLA']  # Configurable
-    execution_date = context['ds']  # Airflow date
-    data = {}
+    import time
+
+    api_key = "453D2VL695ZX6N5C"
+    symbols = ["AAPL", "TSLA"]
+    execution_date = context["ds"]
+
+    output_dir = "/opt/airflow/data/landing"
+    os.makedirs(output_dir, exist_ok=True)
+
+    output_path = f"{output_dir}/{execution_date}_stocks.json"
+
+    # -------- Idempotency guard -------- #
+    if os.path.exists(output_path):
+        print(f"RAW file already exists for {execution_date}. Skipping fetch.")
+        return
+
+    final_data = {}
+
     for symbol in symbols:
-        url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={api_key}'
-        resp = requests.get(url).json()
-        print(resp)  # Debugging line to inspect the response
-        daily_data = resp.get('Time Series (Daily)', {})
-        # Save full time series with dates intact
-        first_date = daily_data.keys()[0]
-        print(first_date)
-        first_record = daily_data[first_date]
-        print(first_record)
-        data = data | {symbol: first_record}  # Append only the most recent day's data
-        # data[symbol] = daily_data
-    # Save to landing zone
-    with open(f'/opt/airflow/data/landing/{execution_date}_stocks.json', 'w') as f:
-        json.dump(data, f)
+        url = (
+            "https://www.alphavantage.co/query"
+            f"?function=TIME_SERIES_DAILY"
+            f"&symbol={symbol}"
+            f"&apikey={api_key}"
+        )
 
-    # Multiple Format Changes. TODO: Implement later
-    #format_type = 'avro'  # Or dynamic Variable.get('stock_format')
-    # if format_type == 'json':
-    #     with open(f'/landing/{execution_date}_stocks.json', 'w') as f: json.dump(data, f)
-    # elif format_type == 'parquet':
-    #     import pandas as pd; pd.DataFrame(data).to_parquet(f'/landing/{execution_date}_stocks.parquet')
-    # Avro needs pyavro or fastavro lib
+        try:
+            resp = requests.get(url, timeout=15)
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            raise RuntimeError(f"API request failed for {symbol}: {e}")
+
+        raw_data = resp.json()
+        daily_data = raw_data.get("Time Series (Daily)", {})
+
+        if not daily_data:
+            print(
+                f"No Time Series data for {symbol}. "
+                f"Keys available: {raw_data.keys()}"
+            )
+            continue
+
+        # Alpha Vantage returns most recent date first
+        latest_date = list(daily_data.keys())[0]
+        final_data[symbol] = daily_data[latest_date]
+
+        # Respect free-tier rate limits
+        time.sleep(1)
+
+    if not final_data:
+        raise ValueError("No valid stock data fetched. Aborting ingestion.")
+
+    with open(output_path, "w") as f:
+        json.dump(final_data, f)
+
+    print(f"RAW stock data written to {output_path}")
 
 
-dag = DAG(
-    'stock_daily_ingest',
+# ---------------- DAG DEFINITION ---------------- #
+
+with DAG(
+    dag_id="stock_daily_ingest",
+    description="EOD stock ingestion from Alpha Vantage (RAW layer)",
     default_args=default_args,
-    schedule='1 0 * * *',  # 4 PM ET weekdays (post-close)
-    start_date=datetime(2026, 1, 21),
-    catchup=False
-)
+    start_date=datetime(2024, 1, 21),
+    schedule="1 0 * * *",
+    catchup=False,
+    max_active_runs=1,
+    tags=["stocks", "ingestion", "raw"],
+) as dag:
 
-fetch_task = PythonOperator(
-    task_id='fetch_alpha_vantage',
-    python_callable=fetch_stock_data,
-    dag=dag
-)
+    fetch_task = PythonOperator(
+        task_id="fetch_alpha_vantage",
+        python_callable=fetch_stock_data,
+        provide_context=True,
+    )
 
-spark_etl = BashOperator(
-    task_id='spark_process',
-    bash_command='spark-submit --class MultiFormat /path/to/your-poc/target/scala-2.12/poc_2.12-0.1.0.jar {{ ds }}',
-    dag=dag
-)
+    spark_etl = BashOperator(
+        task_id="spark_process",
+        bash_command="""
+        docker exec spark-local /opt/spark/bin/spark-submit \
+        --class MultiFormat \
+        /opt/spark-jars/poc_2.12-0.1.0.jar {{ ds }}
+        """,
+        execution_timeout=timedelta(minutes=30),
+    )
 
-fetch_task >> spark_etl
+    fetch_task >> spark_etl
