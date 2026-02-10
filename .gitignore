@@ -45,3 +45,6 @@ build/
 
 ### Scala ###
 .bsp/
+
+### Spark Jars ###
+spark-jars/

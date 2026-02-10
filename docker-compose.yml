@@ -13,7 +13,7 @@ x-airflow-common:
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
     AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
   volumes:
-    - /var/run/docker.sock:/var/run/docker.sock   # 🔥 THIS
+    - /var/run/docker.sock:/var/run/docker.sock 
     - ./dags:/opt/airflow/dags
     - ./data:/opt/airflow/data
     - ./logs:/opt/airflow/logs
@@ -94,6 +94,7 @@ services:
 
   spark-local:
     image: apache/spark:3.5.0-scala2.12-java11-ubuntu
+    container_name: spark-local
     user: root
     environment:
       - SPARK_MODE=client
