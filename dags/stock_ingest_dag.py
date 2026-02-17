@@ -85,7 +85,7 @@ with DAG(
     description="EOD stock ingestion from Alpha Vantage (RAW layer)",
     default_args=default_args,
     start_date=datetime(2024, 1, 21),
-    schedule="0 3 * * *",
+    schedule="0 3 * * 1-5",  
     catchup=False,
     max_active_runs=1,
     tags=["stocks", "ingestion", "raw"],
