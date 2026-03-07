@@ -18,6 +18,9 @@ x-airflow-common:
     - ./data:/opt/airflow/data
     - ./logs:/opt/airflow/logs
     - ./spark-jars:/opt/spark-jars
+    - ./requirements.txt:/requirements.txt
+    - ./config:/opt/airflow/config 
+
   depends_on:
     postgres:
       condition: service_healthy

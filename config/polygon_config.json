@@ -1,0 +1,5 @@
+{
+  "api_key": "GKpQeuxIRjxGo0mZkF0oMsN6MV4QsLYg",
+  "symbols": ["AAPL", "TSLA", "NVDA"],
+  "rate_limit_delay": 12
+}
