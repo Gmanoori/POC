@@ -194,6 +194,56 @@ def ingest_polygon_data(**context):
             time.sleep(RATE_LIMIT_DELAY)
         
         # ====================================================================
+        # SPLITS INGESTION
+        # ====================================================================
+        
+        splits_exists = check_raw_file_exists(symbol, "splits", execution_date)
+        
+        if splits_exists:
+            print(f"  Splits: Already exists, skipping")
+        else:
+            print(f"  Splits: Fetching from Polygon...")
+            
+            url = "https://api.polygon.io/v3/reference/splits"
+            params = {
+                "ticker": symbol,
+                "apiKey": POLYGON_API_KEY
+            }
+            
+            try:
+                response = api_call_with_retry(url, params, max_retries=3, timeout=30)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    # Always write (even if empty) for tracking
+                    write_raw_envelope(symbol, "splits", execution_date, data)
+                    
+                    result_count = len(data.get("results", []))
+                    print(f"  Splits: ✓ Success ({result_count} records)")
+                else:
+                    error_msg = f"HTTP {response.status_code}: {response.text[:200]}"
+                    print(f"  Splits: ✗ Failed - {error_msg}")
+                    failed_symbols.append({
+                        "symbol": symbol,
+                        "endpoint": "splits",
+                        "error": error_msg
+                    })
+            
+            except Exception as e:
+                error_msg = f"Exception: {str(e)}"
+                print(f"  Splits: ✗ Failed - {error_msg}")
+                failed_symbols.append({
+                    "symbol": symbol,
+                    "endpoint": "splits",
+                    "error": error_msg
+                })
+            
+            # Rate limiting
+            print(f"  Waiting {RATE_LIMIT_DELAY}s (rate limit)...")
+            time.sleep(RATE_LIMIT_DELAY)
+        
+        # ====================================================================
         # DIVIDEND INGESTION
         # ====================================================================
         
@@ -379,5 +429,33 @@ with DAG(
         execution_timeout=timedelta(minutes=30),
     )
 
+    # Task 4: Calculate adjusted prices (corporate actions)
+    spark_adjust_task = BashOperator(
+        task_id="calculate_adjusted_prices",
+        bash_command="""
+        echo "Calculating adjusted prices (applying splits & dividends)..."
+        
+        docker exec spark-local /opt/spark/bin/spark-submit \
+        --class CorporateActionsAdjuster \
+        --packages org.apache.spark:spark-avro_2.12:3.5.0 \
+        /opt/spark-jars/polygon_story_2.12-0.1.0.jar
+        """,
+        execution_timeout=timedelta(minutes=30),
+    )
+
+    # Task 5: Detect market regimes (ADX, ATR, classification)
+    spark_regime_task = BashOperator(
+        task_id="detect_market_regimes",
+        bash_command="""
+        echo "Detecting market regimes (ADX, ATR, volatility)..."
+        
+        docker exec spark-local /opt/spark/bin/spark-submit \
+        --class RegimeDetector \
+        --packages org.apache.spark:spark-avro_2.12:3.5.0 \
+        /opt/spark-jars/polygon_story_2.12-0.1.0.jar
+        """,
+        execution_timeout=timedelta(minutes=30),
+    )
+
     # Pipeline flow
-    ingest_task >> validate_task >> spark_curate_task
+    ingest_task >> validate_task >> spark_curate_task >> spark_adjust_task >> spark_regime_task

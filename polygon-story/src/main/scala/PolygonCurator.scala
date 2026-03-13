@@ -78,10 +78,12 @@ object PolygonCurator extends App {
 //    curatedOHLCV.show(5, truncate = false)
     
     // Write to CURATED (partitioned by trade_date_market)
+    // Using dynamic partition overwrite - only overwrites the specific date partition
     val ohlcvOutputPath = s"$curatedBasePath/ohlcv"
     
     curatedOHLCV.write
       .mode("overwrite")
+      .option("partitionOverwriteMode", "dynamic")  // Only overwrite specific partitions
       .partitionBy("trade_date_market")
       .parquet(ohlcvOutputPath)
     
@@ -94,6 +96,67 @@ object PolygonCurator extends App {
   }
 
   // ==========================================================================
+  // CURATE SPLITS
+  // ==========================================================================
+  
+  println("\n--- Curating Splits ---")
+  
+  val splitsRawPath = s"$rawBasePath/splits/ingestion_date=$executionDate"
+  
+  try {
+    val rawSplits = spark.read.option("multiline", "true").json(splitsRawPath).cache()
+    
+    println(s"Raw Split files: ${rawSplits.count()}")
+    
+    // Explode nested results array
+    val explodedSplits = rawSplits
+      .select(
+        col("symbol"),
+        explode(col("payload.results")).as("split")
+      )
+    
+    // Transform to canonical schema
+    val curatedSplits = explodedSplits.select(
+      col("symbol"),
+      col("split.id").as("split_id"),
+      to_date(col("split.execution_date")).as("execution_date"),
+      col("split.split_from").cast("double").as("split_from"),
+      col("split.split_to").cast("double").as("split_to"),
+      // Calculate split ratio: if 2-for-1 split, split_from=1, split_to=2, ratio=2.0
+      (col("split.split_to") / col("split.split_from")).cast("double").as("split_ratio"),
+      current_timestamp().as("ingestion_timestamp")
+    )
+    
+    val splitCount = curatedSplits.count()
+    
+    if (splitCount > 0) {
+      println("Splits Schema:")
+      curatedSplits.printSchema()
+      
+      println("Sample Split Data:")
+      curatedSplits.show(5, truncate = false)
+      
+      // Write to CURATED (partitioned by execution_date)
+      val splitsOutputPath = s"$curatedBasePath/splits"
+      
+      curatedSplits.write
+        .mode("append")  // Append mode for splits (historical data)
+        .partitionBy("execution_date")
+        .parquet(splitsOutputPath)
+      
+      println(s"✓ Splits written to: $splitsOutputPath ($splitCount records)")
+    } else {
+      println("⚠ No splits found (this is normal - splits are rare events)")
+    }
+    
+  } catch {
+    case e: Exception =>
+      println(s"✗ Splits curation failed: ${e.getMessage}")
+      // Don't throw - splits are optional
+      println("Continuing despite split failure...")
+  }
+
+  // ==========================================================================
   // CURATE DIVIDENDS
   // ==========================================================================
   
@@ -102,7 +165,7 @@ object PolygonCurator extends App {
   val dividendsRawPath = s"$rawBasePath/dividends/ingestion_date=$executionDate"
   
   try {
-    val rawDividends = spark.read.json(dividendsRawPath).cache()  // Add .cache() to materialize
+    val rawDividends = spark.read.option("multiline", "true").json(dividendsRawPath).cache()  // Add .cache() to materialize
     
     println(s"Raw Dividend files: ${rawDividends.count()}")
     
