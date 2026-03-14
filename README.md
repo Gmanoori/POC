@@ -1,215 +1,170 @@
-# POC — Production-Grade Data Engineering Proof of Concept
+# Financial Intelligence System
 
-A **production-inspired Data Engineering Proof of Concept** demonstrating how to design, orchestrate, and run scalable batch data pipelines using **Apache Spark, Apache Airflow, Scala, Python, and Docker**.
+A **layered financial data pipeline** that structures market uncertainty through disciplined data engineering. Built with **Apache Spark, Apache Airflow, Scala, Python, and Docker**.
 
-This repository is intentionally structured to reflect **real-world data engineering practices** rather than toy examples. It focuses on **orchestration, modular Spark job design, environment reproducibility, and operational clarity** — the same concerns faced in production data platforms.
+This is NOT a trading bot. This system quantifies risk, detects market regimes, and enforces institutional-style reasoning through clean data architecture.
 
 ---
 
-## Why This Project Exists (Hiring Manager Context)
+## What This System Does
 
-This POC was built to answer a simple but critical question:
+**Layer 0: Data Hygiene**
+- Ingests OHLCV, splits, and dividends from Polygon API
+- Calculates corporate action adjustments (splits/dividends)
+- Ensures all price data is historically accurate
 
-> *Can this engineer design, run, and reason about real data pipelines — not just write Spark code?*
+**Layer 1: Regime Detection**
+- Calculates ADX (trend strength) and ATR (volatility)
+- Classifies markets: Trending/Range × Stable/Volatile
+- Provides confidence scores for each regime
 
-What this project demonstrates:
-
-* Strong understanding of **batch data pipeline architecture**
-* Clear separation of **orchestration vs compute**
-* Comfort with **Spark internals, packaging, and deployment**
-* Practical use of **Airflow for scheduling and dependency management**
-* Production-minded use of **Docker for reproducibility**
-* Clean, extensible repository structure suitable for scaling
+**Future Layers:**
+- Layer 2: Technical indicators (RSI, MACD, Bollinger Bands)
+- Layer 3: Signal generation with regime awareness
+- Layer 4: Risk management and position sizing
 
 ---
 
 ## Core Technologies
 
-* **Apache Spark (Scala)** — Distributed batch processing
-* **Apache Airflow (Python)** — Workflow orchestration
-* **Docker & Docker Compose** — Environment isolation and reproducibility
-* **SBT** — Scala build and dependency management
-* **Git** — Version control with clean project structure
+- **Apache Spark (Scala)** - Distributed data processing
+- **Apache Airflow (Python)** - Pipeline orchestration
+- **Docker** - Environment isolation
+- **Polygon.io API** - Market data source
 
 ---
 
-## Architecture Overview
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                      Apache Airflow                     │
-│                                                         │
-│  - DAGs define scheduling, retries, dependencies        │
-│  - Spark jobs treated as first-class tasks              │
-│                                                         │
-└───────────────────────▲─────────────────────────────────┘
-                        │
-                Triggers Spark Jobs
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────────┐
-│                    Apache Spark                         │
-│                                                         │
-│  - Scala-based Spark applications                       │
-│  - Packaged as JARs via SBT                              │
-│  - Designed to be stateless and repeatable              │
-│                                                         │
-└───────────────────────▲─────────────────────────────────┘
-                        │
-                        ▼
-              Logs / Metrics / Data Outputs
+Polygon API → Landing (Raw JSON) → Curated (Parquet) → Adjusted (Corporate Actions) → Regime (Market State)
+     ↓              ↓                    ↓                      ↓                           ↓
+  Airflow      Immutable           Queryable            Split/Div Adjusted          ADX/ATR/Classification
 ```
 
-**Key architectural principles applied:**
-
-* Airflow handles **when & why** a job runs
-* Spark handles **how** data is processed
-* Jobs are **idempotent and reproducible**
-* Build artifacts are explicit and versionable
+**Pipeline Flow:**
+1. **Ingest** - Python fetches OHLCV, splits, dividends (rate-limited)
+2. **Validate** - Ensures all symbols succeeded before proceeding
+3. **Curate** - Spark transforms raw JSON to typed Parquet
+4. **Adjust** - Applies corporate actions for accurate historical prices
+5. **Detect** - Classifies market regimes (trending/range, stable/volatile)
 
 ---
 
 ## Key Features
 
-* Modular **Scala Spark jobs** suitable for extension
-* Airflow DAGs designed with **clear task boundaries**
-* Dockerized local environment mirroring production setups
-* Explicit build pipeline using **SBT**
-* Clean separation between orchestration, compute, and configuration
+- **Corporate Action Adjustments** - Accurate historical prices accounting for splits/dividends
+- **Regime Detection** - ADX/ATR-based market classification
+- **Rate-Limited Ingestion** - Respects Polygon free tier (5 req/min)
+- **Idempotent Pipeline** - Safe reruns, no duplicates
+- **Partitioned Storage** - Efficient date-range queries
 
 ---
 
-## Getting Started
+## Quick Start
 
 ### Prerequisites
+- Docker & Docker Compose
+- Java 11+
+- Scala & SBT
+- Polygon.io API key (free tier works)
 
-The project assumes familiarity with standard data engineering tooling:
+### Setup
 
-* Java 8 or 11
-* Scala & SBT
-* Python 3.8+
-* Docker & Docker Compose
-* Git
-
----
-
-### Clone the Repository
-
+1. **Clone and configure:**
 ```bash
 git clone https://github.com/Gmanoori/POC.git
 cd POC
 ```
 
----
+2. **Add API key to `config/polygon_config.json`:**
+```json
+{
+  "api_key": "your_polygon_api_key",
+  "symbols": ["AAPL", "TSLA", "NVDA"],
+  "rate_limit_delay": 12
+}
+```
 
-## Build Process (Spark)
-
-Spark jobs are written in Scala and packaged using SBT.
-
+3. **Build Spark jobs:**
 ```bash
-sbt clean compile
+cd polygon-story
 sbt package
 ```
 
-This produces versioned JAR artifacts under `target/scala-*`, which are then consumed by Spark via Airflow-triggered jobs.
-
-**Why this matters:**
-
-* Mirrors real production Spark deployments
-* Makes dependencies explicit
-* Enables CI/CD integration
-
----
-
-## Running the Pipeline Locally
-
-All services can be started using Docker Compose:
-
+4. **Start services:**
 ```bash
-docker-compose up --build
+docker-compose up -d
 ```
 
-Once running:
+5. **Access Airflow UI:** http://localhost:8080
+   - Trigger DAG: `polygon_intelligence_pipeline`
+   - Set custom date or use scheduled run
 
-* **Airflow UI:** [http://localhost:8080](http://localhost:8080)
-* DAGs can be triggered manually or scheduled
-* Logs are accessible for debugging and observability
+### Verify Results
 
-This setup ensures **environment parity** and eliminates "works on my machine" issues.
+```bash
+# Check regime classifications
+docker exec -it spark-local /opt/spark/bin/spark-shell
+
+scala> val regime = spark.read.parquet("/opt/airflow/data/curated/regime")
+scala> regime.show()
+```
 
 ---
 
-## Project Structure (Designed for Scale)
+## Project Structure
 
 ```
 POC/
-├── dags/                  # Airflow DAG definitions
-├── doc/                   # Architectural & design documentation
-├── project/               # Internal SBT configuration
-├── spark-jars/            # Spark dependency / assembly JARs
-├── src/                   # Spark application source code
-│   └── main/
-│       ├── scala/
-│       └── resources/
-├── test/                  # Unit & integration tests
-├── build.sbt              # Build definition
-├── docker-compose.yml     # Runtime orchestration
-└── .gitignore
+├── dags/                           # Airflow DAGs
+│   └── polygon_intelligence_dag.py # Main pipeline (5 tasks)
+├── polygon-story/                  # Spark jobs (Scala)
+│   ├── src/main/scala/
+│   │   ├── PolygonCurator.scala           # Raw → Curated
+│   │   ├── CorporateActionsAdjuster.scala # Apply splits/dividends
+│   │   ├── RegimeDetector.scala           # ADX/ATR/Classification
+│   │   └── TimeUtils.scala                # Timezone helpers
+│   └── build.sbt
+├── spark-jars/                     # Compiled JARs
+├── data/
+│   ├── landing/polygon/            # Raw API responses (immutable)
+│   │   ├── daily_ohlcv/
+│   │   ├── splits/
+│   │   └── dividends/
+│   └── curated/                    # Processed data (Parquet)
+│       ├── ohlcv/
+│       ├── ohlcv_adjusted/
+│       ├── splits/
+│       ├── dividends/
+│       └── regime/
+├── config/
+│   └── polygon_config.json         # API key, symbols, rate limits
+├── doc/intelligence-system/        # Architecture docs
+└── docker-compose.yml
 ```
 
-This layout mirrors how production data platforms are commonly organized.
+---
+
+## Key Design Principles
+
+- **Idempotent** - Safe to rerun any date
+- **Layered** - Each layer reads from previous, never modifies
+- **Fail-fast** - Validation blocks pipeline if data incomplete
+- **Auditable** - Raw layer preserves exact API responses
+- **Regime-aware** - Signals filtered by market conditions
 
 ---
 
-## Development Philosophy
+## Documentation
 
-This project follows several production-grade principles:
-
-* **Idempotent jobs** — safe to rerun
-* **Stateless processing** — externalized state
-* **Explicit dependencies** — no hidden magic
-* **Clear ownership boundaries** — orchestration ≠ compute
-
----
-
-## Testing
-
-Scala tests can be executed via:
-
-```bash
-sbt test
-```
-
-The testing structure is intentionally separated to support:
-
-* Unit testing of Spark logic
-* Future data quality or integration tests
-
----
-
-## Extensibility Roadmap
-
-Potential future enhancements:
-
-* Data quality checks (row counts, null thresholds)
-* Incremental processing strategies
-* CI/CD pipeline integration
-* Cloud deployment (EMR / Dataproc / Databricks)
-* Metrics & alerting integration
-
----
-
-## Contributing
-
-Contributions are welcome via standard GitHub workflow:
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit with clear intent
-4. Open a Pull Request
+- `doc/intelligence-system/FLOW.md` - Complete system design
+- `doc/intelligence-system/LAYER0-COMPLETE.md` - Data hygiene layer
+- `doc/intelligence-system/LAYER1-REGIME.md` - Regime detection details
+- `doc/intelligence-system/SETUP.md` - Deployment guide
 
 ---
 
 ## License
 
-No license is currently specified. A license can be added if the project is intended for broader reuse.
+No license specified.
